@@ -29,6 +29,7 @@
 
 #include <jsk_mbzirc_common/mbzirc_gazebo_panel_plugin.h>
 #include <string>
+#include <visualization_msgs/Marker.h>
 
 namespace gazebo
 {
@@ -95,10 +96,29 @@ void GazeboPanel::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
   node_handle_ = new ros::NodeHandle(namespace_);
   pub_score_ = node_handle_->advertise<std_msgs::String>("score", 1, true);  // set latch true
+  rviz_visualization_pub_ = node_handle_->advertise<visualization_msgs::Marker>("visualization_marker_panel",1,true); //latched
   pub_time_ = node_handle_->advertise<std_msgs::String>("remaining_time", 1);
   ros::NodeHandle param_handle(*node_handle_, "controller");
 
-
+  //Publish marker for panel once (latched topic)
+  math::Pose panelPose = link_->GetWorldPose();
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time::now();
+  marker.type = visualization_msgs::Marker::MESH_RESOURCE;
+  marker.mesh_resource = "package://jsk_mbzirc_common/gazebo_model/models/panel/meshes/panel.dae";
+  marker.mesh_use_embedded_materials = true;
+  marker.scale.x = 0.001;
+  marker.scale.y = 0.001;
+  marker.scale.z = 0.001;
+  marker.pose.position.x = panelPose.pos.x;
+  marker.pose.position.y = panelPose.pos.y;
+  marker.pose.position.z = panelPose.pos.z;
+  marker.pose.orientation.w = panelPose.rot.w;
+  marker.pose.orientation.x = panelPose.rot.x;
+  marker.pose.orientation.y = panelPose.rot.y;
+  marker.pose.orientation.z = panelPose.rot.z;
+  rviz_visualization_pub_.publish(marker);
 
   update_connection_ = event::Events::ConnectWorldUpdateBegin(
                                                               boost::bind(&GazeboPanel::Update, this));
@@ -121,7 +141,7 @@ void GazeboPanel::Update()
   // check score
   double angle = joint_->GetAngle(0).Radian();
   if ( fmod(current_time.Double(), 1) == 0 ) {
-    ROS_INFO_STREAM("Current time is " << current_time.Double() << ", Current angle is = " << angle);
+    ROS_INFO_STREAM_THROTTLE(60,"Current time is " << current_time.Double() << ", Current angle is = " << angle);
   }
 
   // void Entity::GetNearestEntityBelow(double &_distBelow,  std::string &_entityName)

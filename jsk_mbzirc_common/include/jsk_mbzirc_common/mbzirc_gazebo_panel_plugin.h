@@ -74,6 +74,7 @@ private:
 
   ros::NodeHandle* node_handle_;
   ros::Publisher pub_score_, pub_time_;
+  ros::Publisher rviz_visualization_pub_;
   ros::Time state_stamp_;
 
   boost::mutex lock;
